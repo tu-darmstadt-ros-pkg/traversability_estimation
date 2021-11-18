@@ -9,6 +9,8 @@
 #include "filters/FuseFilter.hpp"
 #include <pluginlib/class_list_macros.h>
 #include <algorithm>
+#include <limits>
+#include <vector>
 
 // Grid Map
 #include <grid_map_ros/grid_map_ros.hpp>
@@ -63,16 +65,20 @@ bool FuseFilter<T>::configure()
 template<typename T>
 bool FuseFilter<T>::update(const T& mapIn, T& mapOut)
 {
-
-
   mapOut = mapIn;
   mapOut.add(type_);
 
+  const std::vector<std::string> layer_strings = { "traversability_slope", "traversability_step",
+                                                   "traversability_negative_step", "traversability_roughness" };
 
-  const grid_map::Matrix& traversability_slope_data = mapOut["traversability_slope"];
-  const grid_map::Matrix& traversability_step_data = mapOut["traversability_step"];
-  const grid_map::Matrix& traversability_negative_step = mapOut["traversability_negative_step"];
-  //const grid_map::Matrix& traversability_roughness_data = mapOut["traversability_roughness"];
+  std::vector<Eigen::Ref<grid_map::Matrix>> layers;
+  for (const auto& layer : layer_strings)
+  {
+    if (mapOut.exists(layer))
+    {
+      layers.emplace_back(mapOut[layer]);
+    }
+  }
 
   grid_map::Matrix& traversability_data = mapOut[type_];
 
@@ -81,22 +87,23 @@ bool FuseFilter<T>::update(const T& mapIn, T& mapOut)
 
     //grid_map::wrapIndexToRange(cindex, mapOut.getSize());
 
-    //const float curr_elevation_data = elevation_data(cindex.x(), cindex.y());
-    //std::cout << " el: " << curr_elevation_data << "\n";
-
-
-
     if (!mapOut.isValid(*iterator, "elevation"))
       continue;
 
     grid_map::Index curr_index(*iterator);
 
-    traversability_data(curr_index.x(), curr_index.y()) = std::min({
-                                                            traversability_slope_data(curr_index.x(), curr_index.y()),
-                                                            traversability_step_data(curr_index.x(), curr_index.y()),
-                                                            traversability_negative_step(curr_index.x(), curr_index.y()),
-                                                            //traversability_roughness_data(curr_index.x(), curr_index.y()),
-                                                           });
+    float min = std::numeric_limits<float>::infinity();
+    for (const auto& layer : layers)
+    {
+      const float& value = layer(curr_index.x(), curr_index.y());
+
+      if (value < min)
+      {
+        min = value;
+      }
+    }
+
+    traversability_data(curr_index.x(), curr_index.y()) = min;
   }
   return true;
 }
