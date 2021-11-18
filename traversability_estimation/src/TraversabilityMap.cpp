@@ -702,6 +702,11 @@ bool TraversabilityMap::checkForStep(const grid_map::Index& indexStep)
 
 bool TraversabilityMap::checkForSlope(const grid_map::Index& index)
 {
+  if (!traversabilityMap_.exists(slopeType_))
+  {
+    return true;
+  }
+
   if (traversabilityMap_.at(slopeType_, index) == 0.0) {
     if (!traversabilityMap_.isValid(index, "slope_footprint")) {
       double windowRadius = 3.0*traversabilityMap_.getResolution(); // TODO: read this as a parameter?
