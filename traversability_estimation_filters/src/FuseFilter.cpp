@@ -1,11 +1,3 @@
-/*
- * StepFilter.cpp
- *
- *  Created on: Mar 11, 2015
- *      Author: Martin Wermelinger
- *   Institute: ETH Zurich, Autonomous Systems Lab
- */
-
 #include "filters/FuseFilter.hpp"
 #include <pluginlib/class_list_macros.h>
 #include <algorithm>
@@ -21,43 +13,23 @@ namespace filters {
 
 template<typename T>
 FuseFilter<T>::FuseFilter()
-    : max_allowed_step_depth_(0.15),
-      sample_distance_cells_(10),
-      //firstWindowRadius_(0.08),
-      //secondWindowRadius_(0.08),
-      nCellCritical_(3),
-      type_("traversability")
-{
-
-}
-
-template<typename T>
-FuseFilter<T>::~FuseFilter()
-{
-
-}
+    : type_("traversability")
+{}
 
 template<typename T>
 bool FuseFilter<T>::configure()
 {
-  if (!FilterBase<T>::getParam(std::string("max_allowed_step_depth"), max_allowed_step_depth_)) {
-    ROS_ERROR("Step filter did not find param max_allowed_step_depth.");
-    return false;
-  }
-
-  if (max_allowed_step_depth_ < 0.0) {
-    ROS_ERROR("Max allowed step depth must be greater than zero.");
-    return false;
-  }
-
-  ROS_DEBUG("Max allowed step depth = %f.", max_allowed_step_depth_);
-
   if (!FilterBase<T>::getParam(std::string("map_type"), type_)) {
     ROS_ERROR("Step filter did not find param map_type.");
     return false;
   }
 
-  ROS_DEBUG("Negative Step map type = %s.", type_.c_str());
+  ROS_DEBUG("Fuse Filter map type = %s.", type_.c_str());
+
+  if (!FilterBase<T>::getParam(std::string("layers"), layer_strings_)) {
+    ROS_ERROR("DeletionFilter did not find parameter 'layers'.");
+    return false;
+  }
 
   return true;
 }
@@ -68,11 +40,8 @@ bool FuseFilter<T>::update(const T& mapIn, T& mapOut)
   mapOut = mapIn;
   mapOut.add(type_);
 
-  const std::vector<std::string> layer_strings = { "traversability_slope", "traversability_step",
-                                                   "traversability_negative_step", "traversability_roughness" };
-
   std::vector<Eigen::Ref<grid_map::Matrix>> layers;
-  for (const auto& layer : layer_strings)
+  for (const auto& layer : layer_strings_)
   {
     if (mapOut.exists(layer))
     {
@@ -87,7 +56,7 @@ bool FuseFilter<T>::update(const T& mapIn, T& mapOut)
 
     //grid_map::wrapIndexToRange(cindex, mapOut.getSize());
 
-    if (!mapOut.isValid(*iterator, "elevation"))
+    if (!mapOut.isValid(*iterator))
       continue;
 
     grid_map::Index curr_index(*iterator);
