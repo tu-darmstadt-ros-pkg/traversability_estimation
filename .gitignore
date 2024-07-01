@@ -31,3 +31,7 @@
 .cproject
 .project
 .settings
+
+# Clion
+cmake-build-*
+.idea

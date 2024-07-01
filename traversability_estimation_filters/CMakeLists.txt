@@ -88,3 +88,9 @@ install(TARGETS ${PROJECT_NAME}
 install(DIRECTORY include/filters/
   DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/filters
 )
+
+install(FILES 
+  filter_plugins.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
