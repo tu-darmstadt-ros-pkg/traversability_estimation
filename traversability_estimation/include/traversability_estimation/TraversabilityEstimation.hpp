@@ -11,6 +11,7 @@
 #include "traversability_estimation/TraversabilityMap.hpp"
 
 // Grid Map
+#include <cstdint>  // grid_map_core's TypeDefs.hpp uses uint64_t without including it (GCC 13)
 #include <grid_map_ros/grid_map_ros.hpp>
 #include <grid_map_msgs/GetGridMapInfo.h>
 #include <grid_map_msgs/GetGridMap.h>
